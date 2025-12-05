@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "museum-assisstant",
-    "slug": "museum-assisstant",
+    "name": "muse.ai",
+    "slug": "muse-ai",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",

@@ -54,8 +54,12 @@ export const PreferencesProvider = ({ children }) => {
         }
     };
 
+    const updatePreferences = (newPreferences) => {
+        setPreferences(prev => ({ ...prev, ...newPreferences }));
+    };
+
     return (
-        <PreferencesContext.Provider value={{ preferences, savePreferences, resetPreferences, loading, isConfigured }}>
+        <PreferencesContext.Provider value={{ preferences, updatePreferences, savePreferences, resetPreferences, loading, isConfigured }}>
             {children}
         </PreferencesContext.Provider>
     );

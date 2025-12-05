@@ -1,43 +1,42 @@
-// Service to interact with Hathora AI Models
-// Endpoints provided by user
+import { API_KEY } from '@env';
 
-const HATHORA_API_KEY = 'YOUR_HATHORA_API_KEY'; // Replace with actual key or load from env
-
+// Endpoints for specific models based on user request and standard Hathora/OpenAI-compatible paths
 const ENDPOINTS = {
-    STT: "https://app-1c7bebb9-6977-4101-9619-833b251b86d1.app.hathora.dev/v1/audio/transcriptions", // Standard OpenAI format usually
-    LLM: "https://app-362f7ca1-6975-4e18-a605-ab202bf2c315.app.hathora.dev/v1/chat/completions",
-    TTS: "https://app-01312daf-6e53-4b9d-a4ad-13039f35adc4.app.hathora.dev/synthesize"
+    STT: "https://app-1c7bebb9-6977-4101-9619-833b251b86d1.app.hathora.dev/v1/transcribe",
+    TTS: "https://app-efbc8fe2-df55-4f96-bbe3-74f6ea9d986b.app.hathora.dev/v1/generate"
 };
 
 export const HathoraService = {
-    // Transcribe audio (STT)
+    // Transcribe audio (STT) - Parakeet
     transcribeAudio: async (audioUri) => {
-        console.log('Hathora STT: Transcribing', audioUri);
+        console.log('Hathora STT: Transcribing with Parakeet', audioUri);
 
-        if (!HATHORA_API_KEY || HATHORA_API_KEY === 'YOUR_HATHORA_API_KEY') {
-            console.warn('Hathora API Key missing. Returning mock transcript.');
-            return { text: "This is a mock transcript. Please set your API Key." };
+        if (!API_KEY) {
+            console.warn('Hathora API Key missing (API_KEY in .env). Returning mock transcript.');
+            return { text: "This is a mock transcript. Please set API_KEY in .env." };
         }
 
         try {
             const formData = new FormData();
             formData.append('file', {
                 uri: audioUri,
-                type: 'audio/wav', // Adjust based on actual recording format
+                type: 'audio/wav', // Ensure this matches the recording format
                 name: 'audio.wav',
             });
-            formData.append('model', 'nvidia/parakeet-tdt-0.6b-v3');
+            // Model might not be needed if implied by the endpoint, but keeping if it doesn't hurt
+            // The user's curl didn't show 'model' param for STT, so removing it to match curl exactly
 
             const response = await fetch(ENDPOINTS.STT, {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${HATHORA_API_KEY}`,
+                    'Authorization': `Bearer ${API_KEY}`,
                     'Content-Type': 'multipart/form-data',
                 },
                 body: formData,
             });
 
             const data = await response.json();
+            console.log('STT Response:', data);
             return data;
         } catch (error) {
             console.error('Hathora STT Error:', error);
@@ -45,65 +44,38 @@ export const HathoraService = {
         }
     },
 
-    // Generate response (LLM)
-    generateResponse: async (messages, persona) => {
-        console.log('Hathora LLM: Generating response for persona', persona);
-
-        if (!HATHORA_API_KEY || HATHORA_API_KEY === 'YOUR_HATHORA_API_KEY') {
-            console.warn('Hathora API Key missing. Returning mock response.');
-            return {
-                choices: [{ message: { content: `[Mock ${persona}] That is a fascinating question! Let me tell you more.` } }]
-            };
-        }
-
-        try {
-            const response = await fetch(ENDPOINTS.LLM, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${HATHORA_API_KEY}`,
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    model: "Qwen/Qwen3-30B-A3B", // Using the model from the prompt
-                    messages: messages,
-                    temperature: 0.7,
-                }),
-            });
-
-            const data = await response.json();
-            return data;
-        } catch (error) {
-            console.error('Hathora LLM Error:', error);
-            throw error;
-        }
-    },
-
-    // Synthesize speech (TTS)
+    // Synthesize speech (TTS) - ResembleAI Chatterbox
     synthesizeSpeech: async (text) => {
-        console.log('Hathora TTS: Synthesizing', text);
+        console.log('Hathora TTS: Synthesizing with ResembleAI', text);
 
-        if (!HATHORA_API_KEY || HATHORA_API_KEY === 'YOUR_HATHORA_API_KEY') {
+        if (!API_KEY) {
             console.warn('Hathora API Key missing. Returning mock audio.');
-            return null; // Return null to indicate no audio to play
+            return null;
         }
 
         try {
+            // User's curl uses -F, which implies multipart/form-data
+            const formData = new FormData();
+            formData.append('text', text);
+            formData.append('exaggeration', '0.5');
+            formData.append('cfg_weight', '0.5');
+
             const response = await fetch(ENDPOINTS.TTS, {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${HATHORA_API_KEY}`,
-                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${API_KEY}`,
+                    'Content-Type': 'multipart/form-data',
                 },
-                body: JSON.stringify({
-                    text: text,
-                    model: "hexgrad/Kokoro-82M", // Using the model from the prompt
-                    voice: "af_bella", // Example voice, might need adjustment
-                }),
+                body: formData,
             });
 
-            // Assuming the response is an audio blob or file
-            // For React Native, we might need to save this to a file to play it
-            // For now, we'll return the blob or URL if possible
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('TTS API Error:', errorText);
+                throw new Error(`TTS Failed: ${response.status}`);
+            }
+
+            // Return the audio blob
             const blob = await response.blob();
             return blob;
         } catch (error) {

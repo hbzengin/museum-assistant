@@ -6,32 +6,53 @@ import { PreferencesContext } from '../context/PreferencesContext';
 const HomeScreen = ({ navigation }) => {
     const { preferences, resetPreferences } = useContext(PreferencesContext);
 
+    const getPersonaIcon = (persona) => {
+        switch (persona) {
+            case 'Scholar': return '🎓';
+            case 'Creative': return '🎨';
+            case 'For Kids': return '🎈';
+            case 'Informative': return 'ℹ️';
+            case 'Conversational': return '💬';
+            default: return '👤';
+        }
+    };
+
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.header}>
                 <Text style={styles.title}>The Met Museum</Text>
+                <Text style={styles.subtitle}>AI Guide</Text>
             </View>
 
             <View style={styles.content}>
-                <Text style={styles.welcomeText}>
-                    I'm ready to help you explore.
-                </Text>
-                <Text style={styles.modeText}>
-                    Current Mode: {preferences.persona}
-                </Text>
+                <View style={styles.statusCard}>
+                    <Text style={styles.statusLabel}>Active Persona</Text>
+                    <View style={styles.personaRow}>
+                        <Text style={styles.personaIcon}>{getPersonaIcon(preferences.persona)}</Text>
+                        <Text style={styles.personaText}>{preferences.persona}</Text>
+                    </View>
+                </View>
 
-                <TouchableOpacity
-                    style={styles.talkButton}
-                    onPress={() => navigation.navigate('Voice')}
-                >
-                    <Text style={styles.talkButtonText}>TALK</Text>
-                </TouchableOpacity>
+                <View style={styles.actionContainer}>
+                    <TouchableOpacity
+                        style={styles.talkButton}
+                        onPress={() => navigation.navigate('Voice')}
+                        activeOpacity={0.8}
+                    >
+                        <View style={styles.talkButtonInner}>
+                            <Text style={styles.micIcon}>🎙️</Text>
+                        </View>
+                    </TouchableOpacity>
+                    <Text style={styles.tapText}>Tap to Ask</Text>
+                </View>
+            </View>
 
+            <View style={styles.footer}>
                 <TouchableOpacity
-                    style={styles.resetButton}
+                    style={styles.changeButton}
                     onPress={resetPreferences}
                 >
-                    <Text style={styles.resetButtonText}>Change Guide</Text>
+                    <Text style={styles.changeButtonText}>Change Guide</Text>
                 </TouchableOpacity>
             </View>
         </SafeAreaView>
@@ -41,60 +62,115 @@ const HomeScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f5f5f5',
+        backgroundColor: '#FFFFFF',
     },
     header: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: 20,
+        paddingHorizontal: 24,
+        paddingTop: 20,
+        paddingBottom: 10,
     },
     title: {
-        fontSize: 24,
-        fontWeight: 'bold',
+        fontSize: 32,
+        fontWeight: '800',
+        color: '#1a1a1a',
+        letterSpacing: -0.5,
     },
-
+    subtitle: {
+        fontSize: 16,
+        color: '#666',
+        fontWeight: '500',
+        marginTop: 4,
+        textTransform: 'uppercase',
+        letterSpacing: 1,
+    },
     content: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        padding: 20,
+        paddingHorizontal: 24,
     },
-    welcomeText: {
-        fontSize: 18,
-        marginBottom: 10,
-        textAlign: 'center',
+    statusCard: {
+        position: 'absolute',
+        top: 20,
+        backgroundColor: '#F8F9FA',
+        paddingVertical: 12,
+        paddingHorizontal: 20,
+        borderRadius: 30,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+        borderWidth: 1,
+        borderColor: '#E1E4E8',
     },
-    modeText: {
+    statusLabel: {
+        fontSize: 12,
+        color: '#888',
+        fontWeight: '600',
+        textTransform: 'uppercase',
+    },
+    personaRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+    },
+    personaIcon: {
+        fontSize: 16,
+    },
+    personaText: {
         fontSize: 14,
-        color: '#666',
-        marginBottom: 40,
+        fontWeight: '700',
+        color: '#333',
+    },
+    actionContainer: {
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     talkButton: {
-        width: 200,
-        height: 200,
-        borderRadius: 100,
-        backgroundColor: '#FF3B30',
+        width: 160,
+        height: 160,
+        borderRadius: 80,
+        backgroundColor: '#F0F7FF',
         justifyContent: 'center',
         alignItems: 'center',
-        elevation: 5,
+        shadowColor: '#007AFF',
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.2,
+        shadowRadius: 20,
+        elevation: 10,
+        marginBottom: 24,
+    },
+    talkButtonInner: {
+        width: 120,
+        height: 120,
+        borderRadius: 60,
+        backgroundColor: '#007AFF',
+        justifyContent: 'center',
+        alignItems: 'center',
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.25,
-        shadowRadius: 3.84,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 8,
     },
-    talkButtonText: {
-        color: 'white',
-        fontSize: 32,
-        fontWeight: 'bold',
+    micIcon: {
+        fontSize: 48,
     },
-    resetButton: {
-        marginTop: 40,
-        padding: 10,
+    tapText: {
+        fontSize: 18,
+        color: '#666',
+        fontWeight: '500',
     },
-    resetButtonText: {
+    footer: {
+        padding: 24,
+        alignItems: 'center',
+    },
+    changeButton: {
+        paddingVertical: 12,
+        paddingHorizontal: 24,
+    },
+    changeButtonText: {
         color: '#007AFF',
-        fontSize: 14,
+        fontSize: 16,
+        fontWeight: '600',
     },
 });
 

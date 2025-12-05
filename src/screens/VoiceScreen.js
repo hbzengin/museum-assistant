@@ -1,8 +1,11 @@
+import { Audio } from 'expo-av';
+import * as FileSystem from 'expo-file-system';
 import { useContext, useEffect, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { PreferencesContext } from '../context/PreferencesContext';
 import { HathoraService } from '../services/HathoraService';
 import { MuseumService } from '../services/MuseumService';
+import { OpenAIService } from '../services/OpenAIService';
 
 const VoiceScreen = () => {
     const { preferences } = useContext(PreferencesContext);
@@ -11,41 +14,73 @@ const VoiceScreen = () => {
     const [response, setResponse] = useState('');
     const [isListening, setIsListening] = useState(false);
     const [currentExhibit, setCurrentExhibit] = useState(null);
+    const [recording, setRecording] = useState(null);
+    const [sound, setSound] = useState(null);
 
     useEffect(() => {
-        startInteraction();
-        return () => { };
+        // Request permissions on mount
+        (async () => {
+            await Audio.requestPermissionsAsync();
+        })();
+        return () => {
+            if (recording) {
+                recording.stopAndUnloadAsync();
+            }
+            if (sound) {
+                sound.unloadAsync();
+            }
+        };
     }, []);
 
     const startInteraction = async () => {
         try {
+            if (sound) {
+                await sound.unloadAsync();
+                setSound(null);
+            }
+
             setStatus('Listening...');
             setIsListening(true);
-            // Simulate recording delay
-            setTimeout(async () => {
-                await stopInteraction();
-            }, 3000);
+            setTranscript('');
+            setResponse('');
+
+            await Audio.setAudioModeAsync({
+                allowsRecordingIOS: true,
+                playsInSilentModeIOS: true,
+            });
+
+            const { recording } = await Audio.Recording.createAsync(
+                Audio.RecordingOptionsPresets.HIGH_QUALITY
+            );
+            setRecording(recording);
         } catch (error) {
-            console.error(error);
+            console.error('Failed to start recording', error);
             setStatus('Error');
         }
     };
 
     const stopInteraction = async () => {
         try {
+            if (!recording) return;
+
             setIsListening(false);
             setStatus('Processing...');
 
-            // 1. STT (Simulated audio URI for now)
-            // In a real app, this would be the path to the recorded file
-            const sttResult = await HathoraService.transcribeAudio('mock-audio-uri');
+            await recording.stopAndUnloadAsync();
+            const uri = recording.getURI();
+            setRecording(null);
 
-            // Fallback for mock if STT fails or returns mock text
-            const userText = sttResult.text || "Tell me about this painting";
+            // 1. STT
+            const sttResult = await HathoraService.transcribeAudio(uri);
+            const userText = sttResult.text;
+
+            if (!userText) {
+                setStatus('Error: No speech detected');
+                return;
+            }
             setTranscript(userText);
 
             // 2. Identify Context (Museum Object)
-            // Simple keyword matching against dummy data
             const searchResults = await MuseumService.searchExhibits(userText);
             const matchedExhibit = searchResults.length > 0 ? searchResults[0] : null;
             setCurrentExhibit(matchedExhibit);
@@ -61,16 +96,41 @@ const VoiceScreen = () => {
                 { role: "user", content: userText }
             ];
 
-            // 4. LLM
-            const llmResult = await HathoraService.generateResponse(messages, preferences.persona);
-            const aiText = llmResult.choices[0].message.content;
+            // 4. LLM (OpenAI)
+            const aiText = await OpenAIService.generateResponse(messages);
             setResponse(aiText);
 
             // 5. TTS
             setStatus('Speaking...');
-            await HathoraService.synthesizeSpeech(aiText);
+            const audioBlob = await HathoraService.synthesizeSpeech(aiText);
 
-            setStatus('Idle');
+            if (audioBlob) {
+                // Save blob to file to play it
+                const reader = new FileReader();
+                reader.readAsDataURL(audioBlob);
+                reader.onloadend = async () => {
+                    const base64data = reader.result.split(',')[1];
+                    const fileUri = FileSystem.documentDirectory + 'response.mp3';
+                    await FileSystem.writeAsStringAsync(fileUri, base64data, {
+                        encoding: FileSystem.EncodingType.Base64,
+                    });
+
+                    const { sound: newSound } = await Audio.Sound.createAsync(
+                        { uri: fileUri },
+                        { shouldPlay: true }
+                    );
+                    setSound(newSound);
+
+                    newSound.setOnPlaybackStatusUpdate((status) => {
+                        if (status.didJustFinish) {
+                            setStatus('Idle');
+                        }
+                    });
+                };
+            } else {
+                setStatus('Idle');
+            }
+
         } catch (error) {
             console.error(error);
             setStatus('Error');
@@ -102,10 +162,10 @@ const VoiceScreen = () => {
             <View style={styles.controls}>
                 <TouchableOpacity
                     style={styles.actionButton}
-                    onPress={status === 'Idle' ? startInteraction : stopInteraction}
+                    onPress={status === 'Listening...' ? stopInteraction : startInteraction}
                 >
                     <Text style={styles.actionButtonText}>
-                        {status === 'Idle' ? 'Talk Again' : 'Stop'}
+                        {status === 'Listening...' ? 'Stop' : 'Talk'}
                     </Text>
                 </TouchableOpacity>
             </View>

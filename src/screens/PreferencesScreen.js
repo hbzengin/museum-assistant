@@ -1,182 +1,187 @@
-import { useContext, useState } from 'react';
+import { useContext } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { PreferencesContext } from '../context/PreferencesContext';
 
 const PERSONAS = [
-    {
-        id: 'Scholar',
-        title: 'Scholar',
-        description: 'Deep dives into history, technique, and academic context.',
-        icon: '🎓'
-    },
-    {
-        id: 'Creative',
-        title: 'Creative',
-        description: 'Focus on artistic style, inspiration, and emotional impact.',
-        icon: '🎨'
-    },
-    {
-        id: 'For Kids',
-        title: 'For Kids',
-        description: 'Fun, simple explanations with stories and games.',
-        icon: '🎈'
-    },
-    {
-        id: 'Informative',
-        title: 'Informative',
-        description: 'Clear facts, dates, and essential information.',
-        icon: 'ℹ️'
-    },
-    {
-        id: 'Conversational',
-        title: 'Conversational',
-        description: 'Casual and friendly, like visiting with a friend.',
-        icon: '💬'
-    }
+    { id: 'Scholar', icon: '🎓', description: 'In-depth historical context and academic analysis.' },
+    { id: 'Creative', icon: '🎨', description: 'Focus on artistic techniques, colors, and emotions.' },
+    { id: 'For Kids', icon: '🎈', description: 'Fun, simple explanations with engaging stories.' },
+    { id: 'Informative', icon: 'ℹ️', description: 'Clear, concise facts and highlights.' },
+    { id: 'Conversational', icon: '💬', description: 'Casual, friendly chat like a local guide.' },
 ];
 
-const PreferencesScreen = () => {
-    const { preferences, savePreferences } = useContext(PreferencesContext);
-    const [selectedPersona, setSelectedPersona] = useState(preferences.persona || 'Conversational');
+const PreferencesScreen = ({ navigation }) => {
+    const { preferences, updatePreferences, savePreferences } = useContext(PreferencesContext);
 
-    const handleSave = () => {
-        savePreferences({
-            persona: selectedPersona,
-            isConfigured: true
-        });
+    const handleSave = async () => {
+        await savePreferences({ ...preferences, isConfigured: true });
+        navigation.replace('Home');
     };
 
     return (
-        <ScrollView style={styles.container}>
+        <SafeAreaView style={styles.container}>
             <View style={styles.header}>
                 <Text style={styles.title}>Choose Your Guide</Text>
-                <Text style={styles.subtitle}>Select a persona for your museum companion.</Text>
+                <Text style={styles.subtitle}>Select a persona to customize your tour.</Text>
             </View>
 
-            <View style={styles.list}>
-                {PERSONAS.map((persona) => (
-                    <TouchableOpacity
-                        key={persona.id}
-                        style={[
-                            styles.card,
-                            selectedPersona === persona.id && styles.selectedCard
-                        ]}
-                        onPress={() => setSelectedPersona(persona.id)}
-                    >
-                        <View style={styles.iconContainer}>
-                            <Text style={styles.icon}>{persona.icon}</Text>
-                        </View>
-                        <View style={styles.textContainer}>
-                            <Text style={[
-                                styles.cardTitle,
-                                selectedPersona === persona.id && styles.selectedText
-                            ]}>{persona.title}</Text>
+            <ScrollView
+                contentContainerStyle={styles.scrollContent}
+                showsVerticalScrollIndicator={false}
+            >
+                {PERSONAS.map((persona) => {
+                    const isSelected = preferences.persona === persona.id;
+                    return (
+                        <TouchableOpacity
+                            key={persona.id}
+                            style={[
+                                styles.card,
+                                isSelected && styles.cardSelected
+                            ]}
+                            onPress={() => updatePreferences({ persona: persona.id })}
+                            activeOpacity={0.7}
+                        >
+                            <View style={styles.cardHeader}>
+                                <Text style={styles.icon}>{persona.icon}</Text>
+                                <Text style={[
+                                    styles.cardTitle,
+                                    isSelected && styles.cardTitleSelected
+                                ]}>
+                                    {persona.id}
+                                </Text>
+                                {isSelected && <View style={styles.checkMark}><Text style={styles.checkText}>✓</Text></View>}
+                            </View>
                             <Text style={[
                                 styles.cardDescription,
-                                selectedPersona === persona.id && styles.selectedText
-                            ]}>{persona.description}</Text>
-                        </View>
-                    </TouchableOpacity>
-                ))}
-            </View>
+                                isSelected && styles.cardDescriptionSelected
+                            ]}>
+                                {persona.description}
+                            </Text>
+                        </TouchableOpacity>
+                    );
+                })}
+            </ScrollView>
 
-            <TouchableOpacity
-                style={styles.saveButton}
-                onPress={handleSave}
-            >
-                <Text style={styles.saveButtonText}>Start Exploring</Text>
-            </TouchableOpacity>
-            <View style={{ height: 40 }} />
-        </ScrollView>
+            <View style={styles.footer}>
+                <TouchableOpacity
+                    style={styles.saveButton}
+                    onPress={handleSave}
+                >
+                    <Text style={styles.saveButtonText}>Start Exploring</Text>
+                </TouchableOpacity>
+            </View>
+        </SafeAreaView>
     );
 };
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#fff',
-        padding: 20,
+        backgroundColor: '#FFFFFF',
     },
     header: {
-        marginTop: 40,
-        marginBottom: 30,
+        paddingHorizontal: 24,
+        paddingTop: 20,
+        paddingBottom: 10,
     },
     title: {
-        fontSize: 28,
-        fontWeight: 'bold',
-        color: '#000',
-        marginBottom: 10,
+        fontSize: 32,
+        fontWeight: '800',
+        color: '#1a1a1a',
+        letterSpacing: -0.5,
+        marginBottom: 8,
     },
     subtitle: {
         fontSize: 16,
         color: '#666',
+        lineHeight: 22,
     },
-    list: {
-        gap: 15,
-        marginBottom: 30,
+    scrollContent: {
+        padding: 24,
+        paddingTop: 10,
+        gap: 16,
     },
     card: {
-        flexDirection: 'row',
+        backgroundColor: '#F8F9FA',
+        borderRadius: 20,
         padding: 20,
-        borderRadius: 16,
-        backgroundColor: '#f8f9fa',
         borderWidth: 2,
         borderColor: 'transparent',
-        alignItems: 'center',
-    },
-    selectedCard: {
-        borderColor: '#007AFF',
-        backgroundColor: '#F0F7FF',
-    },
-    iconContainer: {
-        width: 50,
-        height: 50,
-        borderRadius: 25,
-        backgroundColor: '#fff',
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginRight: 15,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
+        shadowOpacity: 0.05,
+        shadowRadius: 8,
         elevation: 2,
+    },
+    cardSelected: {
+        backgroundColor: '#F0F7FF',
+        borderColor: '#007AFF',
+        shadowColor: '#007AFF',
+        shadowOpacity: 0.15,
+    },
+    cardHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 8,
     },
     icon: {
         fontSize: 24,
-    },
-    textContainer: {
-        flex: 1,
+        marginRight: 12,
     },
     cardTitle: {
         fontSize: 18,
-        fontWeight: 'bold',
+        fontWeight: '700',
         color: '#333',
-        marginBottom: 4,
+        flex: 1,
+    },
+    cardTitleSelected: {
+        color: '#007AFF',
+    },
+    checkMark: {
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        backgroundColor: '#007AFF',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    checkText: {
+        color: '#FFF',
+        fontSize: 14,
+        fontWeight: 'bold',
     },
     cardDescription: {
         fontSize: 14,
         color: '#666',
         lineHeight: 20,
+        paddingLeft: 36, // Align with title
     },
-    selectedText: {
-        color: '#007AFF',
+    cardDescriptionSelected: {
+        color: '#4A6F9E',
+    },
+    footer: {
+        padding: 24,
+        paddingTop: 10,
+        backgroundColor: '#FFFFFF',
+        borderTopWidth: 1,
+        borderTopColor: '#F0F0F0',
     },
     saveButton: {
-        backgroundColor: '#000',
-        padding: 20,
+        backgroundColor: '#007AFF',
         borderRadius: 16,
+        paddingVertical: 18,
         alignItems: 'center',
-        shadowColor: '#000',
+        shadowColor: '#007AFF',
         shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.2,
-        shadowRadius: 8,
+        shadowOpacity: 0.3,
+        shadowRadius: 10,
         elevation: 5,
     },
     saveButtonText: {
-        color: '#fff',
+        color: '#FFFFFF',
         fontSize: 18,
-        fontWeight: 'bold',
+        fontWeight: '700',
     },
 });
 
