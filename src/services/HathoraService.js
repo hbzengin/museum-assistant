@@ -57,14 +57,15 @@ export const HathoraService = {
             // User's curl uses -F, which implies multipart/form-data
             const formData = new FormData();
             formData.append('text', text);
-            formData.append('exaggeration', '0.5');
-            formData.append('cfg_weight', '0.5');
+            // Removing optional parameters to avoid CUDA errors on the server
+            // formData.append('exaggeration', '0.5');
+            // formData.append('cfg_weight', '0.5');
 
             const response = await fetch(ENDPOINTS.TTS, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${API_KEY}`,
-                    'Content-Type': 'multipart/form-data',
+                    // 'Content-Type': 'multipart/form-data', // Let fetch set this with boundary
                 },
                 body: formData,
             });

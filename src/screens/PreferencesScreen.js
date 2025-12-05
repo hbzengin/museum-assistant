@@ -107,7 +107,7 @@ const styles = StyleSheet.create({
         borderRadius: 20,
         padding: 20,
         borderWidth: 2,
-        borderColor: 'transparent',
+        borderColor: '#E0E0E0', // Darker border as requested
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.05,
@@ -162,10 +162,15 @@ const styles = StyleSheet.create({
     },
     footer: {
         padding: 24,
-        paddingTop: 10,
-        backgroundColor: '#FFFFFF',
+        paddingTop: 20,
+        backgroundColor: '#EBEBEB', // Even darker white/gray
         borderTopWidth: 1,
-        borderTopColor: '#F0F0F0',
+        borderTopColor: '#D1D1D6',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: -3 },
+        shadowOpacity: 0.1,
+        shadowRadius: 5,
+        elevation: 10,
     },
     saveButton: {
         backgroundColor: '#007AFF',

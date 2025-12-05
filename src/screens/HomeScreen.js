@@ -25,13 +25,20 @@ const HomeScreen = ({ navigation }) => {
             </View>
 
             <View style={styles.content}>
-                <View style={styles.statusCard}>
-                    <Text style={styles.statusLabel}>Active Persona</Text>
+                <TouchableOpacity
+                    style={styles.statusCard}
+                    onPress={resetPreferences}
+                    activeOpacity={0.7}
+                >
+                    <View>
+                        <Text style={styles.statusLabel}>Active Persona</Text>
+                        <Text style={styles.tapToChange}>Tap to change</Text>
+                    </View>
                     <View style={styles.personaRow}>
                         <Text style={styles.personaIcon}>{getPersonaIcon(preferences.persona)}</Text>
                         <Text style={styles.personaText}>{preferences.persona}</Text>
                     </View>
-                </View>
+                </TouchableOpacity>
 
                 <View style={styles.actionContainer}>
                     <TouchableOpacity
@@ -45,15 +52,6 @@ const HomeScreen = ({ navigation }) => {
                     </TouchableOpacity>
                     <Text style={styles.tapText}>Tap to Ask</Text>
                 </View>
-            </View>
-
-            <View style={styles.footer}>
-                <TouchableOpacity
-                    style={styles.changeButton}
-                    onPress={resetPreferences}
-                >
-                    <Text style={styles.changeButtonText}>Change Guide</Text>
-                </TouchableOpacity>
             </View>
         </SafeAreaView>
     );
@@ -98,7 +96,8 @@ const styles = StyleSheet.create({
         borderRadius: 30,
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 12,
+        justifyContent: 'space-between',
+        width: '100%',
         borderWidth: 1,
         borderColor: '#E1E4E8',
     },
@@ -107,6 +106,11 @@ const styles = StyleSheet.create({
         color: '#888',
         fontWeight: '600',
         textTransform: 'uppercase',
+    },
+    tapToChange: {
+        fontSize: 10,
+        color: '#007AFF',
+        marginTop: 2,
     },
     personaRow: {
         flexDirection: 'row',

@@ -18,9 +18,12 @@ const VoiceScreen = () => {
     const [sound, setSound] = useState(null);
 
     useEffect(() => {
-        // Request permissions on mount
+        // Request permissions and start recording on mount
         (async () => {
-            await Audio.requestPermissionsAsync();
+            const permission = await Audio.requestPermissionsAsync();
+            if (permission.granted) {
+                startInteraction();
+            }
         })();
         return () => {
             if (recording) {
@@ -89,9 +92,16 @@ const VoiceScreen = () => {
             const messages = [
                 {
                     role: "system",
-                    content: `You are a museum guide with the persona: ${preferences.persona}. 
-          ${matchedExhibit ? `The user is looking at: ${matchedExhibit.title} by ${matchedExhibit.artistDisplayName}. Description: ${matchedExhibit.description}` : "The user is asking a general question."}
-          Keep your response concise and spoken-style.`
+                    content: `You are a museum guide at The Metropolitan Museum of Art (The Met) in New York.
+          Persona: ${preferences.persona}.
+
+          IMPORTANT RULES:
+          1. ONLY discuss exhibits and art within The Met.
+          2. If asked about something not in The Met, politely redirect to a relevant object that IS in The Met.
+          3. Never suggest visiting other museums.
+          4. Keep your response concise and spoken-style.
+
+          ${matchedExhibit ? `The user is looking at: ${matchedExhibit.title} by ${matchedExhibit.artistDisplayName}. Description: ${matchedExhibit.description}` : "The user is asking a general question."}`
                 },
                 { role: "user", content: userText }
             ];
@@ -140,8 +150,10 @@ const VoiceScreen = () => {
     return (
         <View style={styles.container}>
             <View style={styles.visualizer}>
-                <Text style={styles.statusText}>{status}</Text>
-                <View style={[styles.waveformPlaceholder, isListening && styles.activeWaveform]} />
+                {!status.includes('Error') && <Text style={styles.statusText}>{status}</Text>}
+                {!status.includes('Error') && (
+                    <View style={[styles.waveformPlaceholder, isListening && styles.activeWaveform]} />
+                )}
 
                 {transcript ? (
                     <Text style={styles.transcriptText}>You: "{transcript}"</Text>
@@ -165,7 +177,7 @@ const VoiceScreen = () => {
                     onPress={status === 'Listening...' ? stopInteraction : startInteraction}
                 >
                     <Text style={styles.actionButtonText}>
-                        {status === 'Listening...' ? 'Stop' : 'Talk'}
+                        {status === 'Listening...' ? 'Pause' : 'Talk'}
                     </Text>
                 </TouchableOpacity>
             </View>
